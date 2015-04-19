@@ -1,9 +1,4 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 Matthew Tanner  
 mjtanner@uga.edu
 
@@ -13,10 +8,18 @@ mjtanner@uga.edu
 
 Loading the data requires the fully qualified path and file name or for the data file to reside in the current working directoru:
 
-```{r data load, echo = TRUE}
+
+```r
 setwd("~/RepData_PeerAssessment1")
 activityData <- read.table(unz("activity.zip", "activity.csv"), header=T, sep=",")
 str(activityData)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 
@@ -25,11 +28,14 @@ str(activityData)
 
 Here we call the dplyr package to call the 'sum' funciotn on all the levels of 'date'.
 
-```{r dply call, echo = TRUE, message = FALSE}
+
+```r
 library(dplyr)
 totalStepsByDate <- group_by(activityData, date) %>% summarize(total_steps = sum(steps))
 hist(totalStepsByDate$total_steps, main = "Histogram of Daily Total Steps", xlab = "Daily Total Steps", breaks = 10)
-````
+```
+
+![](PA1_template_files/figure-html/dply call-1.png) 
 
 
 
@@ -37,15 +43,23 @@ hist(totalStepsByDate$total_steps, main = "Histogram of Daily Total Steps", xlab
 
 Here we again call on the dplyr package to calculate the means steps for all levels of interval and output the results to a histogram.
 
-```{r daily activity patter, echo = TRUE}
+
+```r
 averageStepsPerInterval <- group_by(activityData, interval) %>% summarize(average_steps = mean(steps, na.rm = TRUE))
 plot(averageStepsPerInterval$interval,averageStepsPerInterval$average_steps, main = "Average Step by Interval", xlab = "Interval", ylab = "Average Steps", type = "l")
 ```
 
+![](PA1_template_files/figure-html/daily activity patter-1.png) 
+
 The following code segment returns the 5-minute interval with the maximun average number of steps
 
-```{r maximum average step 5-minute interval, echo=TRUE}
+
+```r
 averageStepsPerInterval$interval[which.max(averageStepsPerInterval$average_steps)]
+```
+
+```
+## [1] 835
 ```
 
 
@@ -54,13 +68,19 @@ averageStepsPerInterval$interval[which.max(averageStepsPerInterval$average_steps
 
 Here we calculate the total number of missing data:
 
-```{r missing data, echo = TRUE}
+
+```r
 sum(is.na(activityData$steps))
+```
+
+```
+## [1] 2304
 ```
 
 Our strategy is to replace missing data with the weekday average with respect to 5-minute interval.
 
-```{r impute missing date, echo = TRUE}
+
+```r
 # New copy of the data.
 newActivityData <- activityData
 
@@ -80,15 +100,19 @@ for (i in 1:nrow(newActivityData)) {
 
 We again call on the dplyr functionality to calculate and displace the total number of steps per date. The histogram profile appears unchanged. Conceptually, ignoring missing data might, in many cases, be equivalent to replaced them with values derived from flat averages. 
 
-```{r total steps missing data, echo = TRUE}
+
+```r
 totalStepsByDate <- group_by(newActivityData, date) %>% summarize(total_steps = sum(steps))
 
 hist(totalStepsByDate$total_steps, main = "Histogram of Daily Total Steps (Missing Data Replaced)", xlab = "Daily Total Steps", breaks = 10)
 ```
 
+![](PA1_template_files/figure-html/total steps missing data-1.png) 
+
 The daily mean and median steps are:
 
-```{r mean and median daily, echo = TRUE}
+
+```r
 meanSteps = mean(totalStepsByDate$total_steps)
 medianSteps = median(totalStepsByDate$total_steps)
 ```
@@ -99,7 +123,8 @@ medianSteps = median(totalStepsByDate$total_steps)
 
 We first introduce the new variable "daytype".
 
-```{r dayType, echo = TRUE}
+
+```r
 dayType <- ifelse((newActivityData$day == "Saturday" | newActivityData$day == "Sunday"), "weekend", "weekday")
 
 newActivityData$dayType <- as.factor(dayType)
@@ -107,12 +132,14 @@ newActivityData$dayType <- as.factor(dayType)
 
 We then calculate the mean steps for levels of dayType over the 5-minute intervals.
 
-```{r mean histogram per dayType, echo = TRUE}
+
+```r
 averageStepsPerDayTypeInterval <- group_by(newActivityData, interval, dayType) %>% summarize(average_steps = mean(steps))
 ```
 
 Finally, we plot the respective line plots in the prescribed format.
-```{r composit post per dayTyp, echo = TRUE}
+
+```r
 xWeekday <- averageStepsPerdayTypeInterval$interval[which(averageStepsPerdayTypeInterval$dayType == "weekday")]
 xWeekend <- averageStepsPerdayTypeInterval$interval[which(averageStepsPerdayTypeInterval$dayType == "weekend")]
 yWeekday <- averageStepsPerdayTypeInterval$average_steps[which(averageStepsPerdayTypeInterval$dayType == "weekday")]
@@ -122,5 +149,7 @@ par(mfrow=c(2,1))
 plot(xWeekend,yWeekend, main = "weekend", type = "l", ylab = "Average Steps", xlab = "Interval", ylim = c(0,250))
 plot(xWeekday,yWeekday, main = "weekday", type = "l", ylab = "Average Steps", xlab = "Interval", ylim = c(0,250))
 ```
+
+![](PA1_template_files/figure-html/composit post per dayTyp-1.png) 
 
 Significant differences between the weekday and weekend profile are apparent.  The weekday profile has a significantly higher peek corresponding to the early morning hours, while the weekend profile appears to have greater variablity over time and generally higher values after the early morning.
